@@ -1,4 +1,4 @@
-package com.example.movies10
+package com.example.movies10.ui.movies
 
 import android.app.Activity
 import android.content.Intent
@@ -14,6 +14,11 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.movies10.data.network.IMDbApiService
+import com.example.movies10.ui.poster.PosterActivity
+import com.example.movies10.R
+import com.example.movies10.data.dto.MoviesSearchResponse
+import com.example.movies10.domain.models.Movie
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
