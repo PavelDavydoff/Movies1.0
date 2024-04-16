@@ -2,7 +2,7 @@ package com.example.movies10.ui.poster
 
 import android.app.Activity
 import android.os.Bundle
-import com.example.movies10.Creator
+import com.example.movies10.util.Creator
 import com.example.movies10.R
 
 class PosterActivity : Activity() {
