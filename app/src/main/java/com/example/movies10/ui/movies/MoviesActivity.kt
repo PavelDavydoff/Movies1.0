@@ -11,10 +11,13 @@ import android.view.View
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.movies10.R
+import com.example.movies10.domain.models.Movie
 import com.example.movies10.presentation.movies.MoviesView
+import com.example.movies10.ui.movies.models.MoviesState
 import com.example.movies10.ui.poster.PosterActivity
 import com.example.movies10.util.Creator
 
@@ -36,7 +39,7 @@ class MoviesActivity : Activity(), MoviesView {
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private val moviesSearchPresenter = Creator.provideMoviesSearchPresenter(this, this, adapter)
+    private val moviesSearchPresenter = Creator.provideMoviesSearchPresenter(this, this)
 
     private var textWatcher: TextWatcher? = null
 
@@ -70,8 +73,6 @@ class MoviesActivity : Activity(), MoviesView {
         }
 
         textWatcher?.let { queryInput.addTextChangedListener(it) }
-
-        moviesSearchPresenter.onCreate()
     }
 
     override fun onDestroy() {
@@ -89,7 +90,7 @@ class MoviesActivity : Activity(), MoviesView {
         return current
     }
 
-    override fun showPlaceholderMessage(isVisible: Boolean) {
+    /*override fun showPlaceholderMessage(isVisible: Boolean) {
         placeholderMessage.visibility = if (isVisible) View.VISIBLE else View.GONE
     }
 
@@ -103,6 +104,52 @@ class MoviesActivity : Activity(), MoviesView {
 
     override fun changePlaceholderText(newPlaceholderText: String) {
         placeholderMessage.text = newPlaceholderText
+    }
+
+    override fun updateMoviesList(newMoviesList: List<Movie>) {
+        adapter.movies.clear()
+        adapter.movies.addAll(newMoviesList)
+        adapter.notifyDataSetChanged()
+    }*/
+    fun showLoading() {
+        moviesList.visibility = View.GONE
+        placeholderMessage.visibility = View.GONE
+        progressBar.visibility = View.VISIBLE
+    }
+
+    fun showError(errorMessage: String) {
+        moviesList.visibility = View.GONE
+        placeholderMessage.visibility = View.VISIBLE
+        progressBar.visibility = View.GONE
+
+        placeholderMessage.text = errorMessage
+    }
+
+    fun showEmpty(emptyMessage: String) {
+        showError(emptyMessage)
+    }
+
+    fun showContent(movies: List<Movie>) {
+        moviesList.visibility = View.VISIBLE
+        placeholderMessage.visibility = View.GONE
+        progressBar.visibility = View.GONE
+
+        adapter.movies.clear()
+        adapter.movies.addAll(movies)
+        adapter.notifyDataSetChanged()
+    }
+
+    override fun render(state: MoviesState) {
+        when(state) {
+            is MoviesState.Loading -> showLoading()
+            is MoviesState.Content -> showContent(state.movies)
+            is MoviesState.Error -> showError(state.errorMessage)
+            is MoviesState.Empty -> showEmpty(state.message)
+        }
+    }
+
+    override fun showToast(message: String) {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
 }
