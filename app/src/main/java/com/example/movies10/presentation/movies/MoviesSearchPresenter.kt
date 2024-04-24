@@ -10,8 +10,11 @@ import com.example.movies10.ui.movies.models.MoviesState
 import com.example.movies10.util.Creator
 
 class MoviesSearchPresenter(
-    private val view: MoviesView, private val context: Context
+     private val context: Context
 ) {
+    private var view: MoviesView? = null
+    private var state: MoviesState? = null
+    private var latestSearchText: String? = null
 
     private val moviesInteractor = Creator.provideMoviesInteractor(context)
 
@@ -19,19 +22,26 @@ class MoviesSearchPresenter(
         private const val SEARCH_DEBOUNCE_DELAY = 2000L
     }
 
-    private val movies = ArrayList<Movie>()
-
     private val handler = Handler(Looper.getMainLooper())
 
-    private var lastSearchText: String? = null
-
     private val searchRunnable = Runnable {
-        val newSearchText = lastSearchText ?: ""
+        val newSearchText = latestSearchText ?: ""
         searchRequest(newSearchText)
     }
 
+    fun attachView(view: MoviesView){
+        this.view = view
+        state?.let { view.render(it) }
+    }
+    fun detachView(){
+        this.view = null
+    }
+
     fun searchDebounce(changedText: String) {
-        this.lastSearchText = changedText
+        if (latestSearchText == changedText){
+            return
+        }
+        this.latestSearchText = changedText
         handler.removeCallbacks(searchRunnable)
         handler.postDelayed(searchRunnable, SEARCH_DEBOUNCE_DELAY)
     }
@@ -42,28 +52,27 @@ class MoviesSearchPresenter(
 
     private fun searchRequest(newSearchText: String) {
         if (newSearchText.isNotEmpty()) {
-
-            view.render(MoviesState.Loading)
+            renderState(MoviesState.Loading)
 
             moviesInteractor.searchMovies(newSearchText, object : MoviesInteractor.MoviesConsumer {
                 override fun consume(foundMovies: List<Movie>?, errorMessage: String?) {
                     handler.post {
+                        val movies = mutableListOf<Movie>()
                         if (foundMovies != null) {
-                            movies.clear()
                             movies.addAll(foundMovies)
                         }
                         when {
                             errorMessage != null -> {
-                                view.render(MoviesState.Error(context.getString(R.string.something_went_wrong)))
-                                view.showToast(errorMessage)
+                                renderState(MoviesState.Error(context.getString(R.string.something_went_wrong)))
+                                view?.showToast(errorMessage)
                             }
 
                             movies.isEmpty() -> {
-                                view.render(MoviesState.Empty(context.getString(R.string.nothing_found)))
+                                renderState(MoviesState.Empty(context.getString(R.string.nothing_found)))
                             }
 
                             else -> {
-                                view.render(MoviesState.Content(movies))
+                                renderState(MoviesState.Content(movies))
                             }
                         }
                     }
@@ -72,21 +81,9 @@ class MoviesSearchPresenter(
         }
     }
 
-    /*private fun showMessage(text: String, additionalMessage: String) {
-        if (text.isNotEmpty()) {
-            view.showPlaceholderMessage(true)
-            movies.clear()
-            view.updateMoviesList(movies)
-            view.changePlaceholderText(text)
-            if (additionalMessage.isNotEmpty()) {
-                view.showToast(additionalMessage)
-            } else {
-                view.showPlaceholderMessage(false)
-            }
-        }
+    private fun renderState(state: MoviesState){
+        this.state = state
+        this.view?.render(state)
     }
 
-    private fun hideMessage() {
-        view.showPlaceholderMessage(false)
-    }*/
 }
